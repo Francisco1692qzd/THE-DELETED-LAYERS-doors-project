@@ -1,22 +1,12 @@
--- GUIDING LIGHT ENGINE (ULTRA-RAW + FIXED ANIMATION)
--- NENHUM TEXTO É ADICIONADO AUTOMATICAMENTE.
--- AS ANIMAÇÕES ESTÃO CORRIGIDAS PARA EVITAR ERROS NO CONSOLE.
-
 local G = getgenv()
 
 G.LoadGithubAudio = function(url)
     if not (writefile and getcustomasset and request) then return nil end
-    local cleanUrl = url .. "?t=" .. math.random(1, 100000)
-    local response = request({
-        Url = cleanUrl,
-        Method = "GET",
-        Headers = {["Accept"] = "audio/mpeg, audio/ogg, application/octet-stream"}
-    })
+    local response = request({Url = url .. "?t=" .. tick(), Method = "GET"})
     if response.StatusCode ~= 200 then return nil end
-    local fileName = "guiding_music_fixed.mp3"
+    local fileName = "death_music.mp3"
     writefile(fileName, response.Body)
-    local success, assetId = pcall(function() return getcustomasset(fileName) end)
-    return success and assetId or nil
+    return getcustomasset(fileName)
 end
 
 _G.ShowCustomDeathHint = function(data)
@@ -25,11 +15,10 @@ _G.ShowCustomDeathHint = function(data)
     local color = data.Color or Color3.fromRGB(0, 255, 255)
     
     local sg = Instance.new("ScreenGui", player.PlayerGui)
-    sg.Name = "CustomGuidingLight"
     sg.IgnoreGuiInset = true
     sg.DisplayOrder = 10000
 
-    local guidinglightmusic = G.LoadGithubAudio("https://raw.githubusercontent.com/Francisco1692qzd/THE-DELETED-LAYERS-doors-project/main//Iron%20Veins%20-%20Phobia%20Echoes%20-%20Sonauto.mp3")
+    local audioId = G.LoadGithubAudio("https://raw.githubusercontent.com/Francisco1692qzd/THE-DELETED-LAYERS-doors-project/main//Iron%20Veins%20-%20Phobia%20Echoes%20-%20Sonauto.mp3")
 
     local bg = Instance.new("Frame", sg)
     bg.Size = UDim2.new(1, 0, 1, 0)
@@ -46,7 +35,7 @@ _G.ShowCustomDeathHint = function(data)
     textLabel.TextTransparency = 1
 
     local music = Instance.new("Sound", workspace)
-    music.SoundId = guidinglightmusic or ""
+    music.SoundId = audioId or ""
     music.Volume = 1.3
     music:Play()
 
@@ -55,27 +44,23 @@ _G.ShowCustomDeathHint = function(data)
         TS:Create(bg, TweenInfo.new(1.2), {BackgroundTransparency = 0.15}):Play()
         task.wait(1.2)
 
-        -- LOOP DE TEXTOS PUROS (SEM PREFIXO "YOU DIED TO")
         for _, content in ipairs(tips) do
             textLabel.Text = tostring(content)
             textLabel.Position = UDim2.new(0.1, 0, 0.45, 0)
             textLabel.TextTransparency = 1
 
-            -- CORREÇÃO DO ENUM: EasingStyle.Quad + EasingDirection.Out
-            local introTween = TS:Create(textLabel, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            -- CORREÇÃO DEFINITIVA: Style e Direction separados
+            TS:Create(textLabel, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
                 Position = UDim2.new(0.1, 0, 0.4, 0),
                 TextTransparency = 0
-            })
-            introTween:Play()
+            }):Play()
             
             task.wait(2.5 + (#textLabel.Text * 0.04)) 
             
-            -- CORREÇÃO DO ENUM: EasingStyle.Quad + EasingDirection.In
-            local outroTween = TS:Create(textLabel, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            TS:Create(textLabel, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
                 Position = UDim2.new(0.1, 0, 0.35, 0),
                 TextTransparency = 1
-            })
-            outroTween:Play()
+            }):Play()
             
             task.wait(1.5)
         end
