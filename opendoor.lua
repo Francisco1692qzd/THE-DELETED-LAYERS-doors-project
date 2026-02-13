@@ -1,13 +1,21 @@
--- [[ OpenDoor.lua - The Ghost Bug ]]
+-- [[ OpenDoor.lua - Seamless Auto-Progress ]]
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local Player = Players.LocalPlayer
 
-local function StealthBreach()
+local function SeamlessBreach()
     local char = Player.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if not root then return end
 
+    -- [1. THE HIDING WATCHER]
+    -- If the player is currently hiding, we wait for them to exit.
+    if char:GetAttribute("Hiding") == true then
+        -- This 'repeat' yields the script until they are no longer hiding
+        repeat task.wait(0.1) until char:GetAttribute("Hiding") ~= true
+    end
+
+    -- [2. TARGETING]
     local roomNum = RS.GameData.LatestRoom.Value
     local room = workspace.CurrentRooms:FindFirstChild(tostring(roomNum))
 
@@ -16,41 +24,34 @@ local function StealthBreach()
         local main = door:FindFirstChild("Door") or door:FindFirstChild("Panel")
 
         if main and main.CanCollide == true then
-            -- [1. THE CREEPY DELAY]
-            -- Makes it look like "Lag" opened the door, not a script.
-            task.wait(math.random(5, 15) / 10) 
-
             local oldPos = root.CFrame
             
-            -- [2. THE SILENT SNAP]
-            -- We snap UNDER the floor so no one sees the player flicker.
+            -- [3. THE SEAMLESS SNAP]
+            -- Snap to door underground to remain unnoticed
             root.CFrame = main.CFrame * CFrame.new(0, -15, 0)
             
-            -- [3. THE BRUTE FORCE]
-            -- Fire the interaction multiple times quickly to ensure the "Bug" happens.
-            for i = 1, 3 do
-                local remote = door:FindFirstChild("ClientOpen")
-                if remote then remote:FireServer() end
+            -- Single frame trigger
+            local remote = door:FindFirstChild("ClientOpen")
+            if remote then remote:FireServer() end
 
-                for _, v in pairs(door:GetDescendants()) do
-                    if v:IsA("ProximityPrompt") then
-                        fireproximityprompt(v)
-                    elseif v:IsA("TouchTransmitter") then
-                        firetouchinterest(root, v.Parent, 0)
-                        firetouchinterest(root, v.Parent, 1)
-                    end
+            for _, v in pairs(door:GetDescendants()) do
+                if v:IsA("ProximityPrompt") then
+                    fireproximityprompt(v)
+                elseif v:IsA("TouchTransmitter") then
+                    firetouchinterest(root, v.Parent, 0)
+                    firetouchinterest(root, v.Parent, 1)
                 end
-                task.wait(0.05)
             end
 
-            -- [4. THE SILENT RETURN]
+            -- [4. THE INSTANT RETURN]
+            task.wait() -- Minimal sync
             root.CFrame = oldPos
             root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
         end
     end
 end
 
--- Run silently
+-- Execute in a new thread so it doesn't block other scripts while waiting
 task.spawn(function()
-    pcall(StealthBreach)
+    pcall(SeamlessBreach)
 end)
