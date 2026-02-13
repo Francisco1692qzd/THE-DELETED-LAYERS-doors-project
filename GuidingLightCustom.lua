@@ -35,7 +35,7 @@ _G.ShowCustomDeathHint = function(data)
     textLabel.TextTransparency = 1
 
     local music = Instance.new("Sound", workspace)
-    music.SoundId = audioId or ""
+    music.SoundId = audioId
     music.Volume = 1.3
     music:Play()
 
