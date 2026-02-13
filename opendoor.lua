@@ -1,15 +1,15 @@
--- [[ OpenDoor.lua - The Invisible Phantom ]]
+-- [[ OpenDoor.lua - The Sync-Corrected Invisible Breach ]]
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 
-local function InvisibleBreach()
+local function GuaranteedInvisibleBreach()
     local char = Player.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if not root then return end
 
-    -- [1. WAIT FOR HIDE EXIT]
+    -- [1. Hiding Watcher]
     if char:GetAttribute("Hiding") == true then
         repeat task.wait() until char:GetAttribute("Hiding") ~= true
     end
@@ -22,22 +22,26 @@ local function InvisibleBreach()
     local main = door:FindFirstChild("Door") or door:FindFirstChild("Panel")
 
     if main and main.CanCollide == true then
-        local oldCF = root.CFrame
+        local oldPos = root.CFrame
         
-        -- [2. THE PHANTOM TRICK]
-        -- We temporarily tell the internal motor6Ds to stay behind 
-        -- while the RootPart snaps. This prevents the "Flicker".
-        
-        -- Snap logic
+        -- [2. THE STICKY SNAP]
+        -- We snap for exactly 2 physics frames. 
+        -- This is fast enough to be invisible but long enough for the server to "catch up".
         local targetCF = main.CFrame * CFrame.new(0, 0, 4)
 
-        -- Fire the snap and triggers in the SAME heartbeat step
-        root.CFrame = targetCF
-        
-        -- Fire Triggers
+        -- Fire triggers immediately
         local remote = door:FindFirstChild("ClientOpen")
         if remote then remote:FireServer() end
 
+        -- Snapshot the snap
+        root.CFrame = targetCF
+        
+        -- Use Heartbeat to wait exactly 2 frames (approx 0.03s)
+        -- This is the "Sweet Spot" for Doors anti-cheat/lag
+        RunService.Heartbeat:Wait()
+        RunService.Heartbeat:Wait()
+
+        -- Trigger physical interactions while we are 'there'
         for _, v in pairs(door:GetDescendants()) do
             if v:IsA("ProximityPrompt") then
                 fireproximityprompt(v)
@@ -47,14 +51,12 @@ local function InvisibleBreach()
             end
         end
 
-        -- [3. THE ZERO-DELAY RETURN]
-        -- We don't even use task.wait() here. We return immediately.
-        root.CFrame = oldCF
+        -- [3. THE RETURN]
+        root.CFrame = oldPos
         root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
     end
 end
 
--- Run
 task.spawn(function()
-    pcall(InvisibleBreach)
+    pcall(GuaranteedInvisibleBreach)
 end)
