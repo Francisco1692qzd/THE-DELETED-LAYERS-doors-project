@@ -31,7 +31,7 @@ local function UniversalBunkerBreach()
 
         -- [3. THE UNDERWORLD BUNKER]
         -- -15 is DOWN (Under floor), 4 is BACK (Behind door)
-        local bunkerCF = main.CFrame * CFrame.new(0, -15, 4) 
+        local bunkerCF = main.CFrame * CFrame.new(0, 15, 4) 
 
         root.CFrame = bunkerCF
         
