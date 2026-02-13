@@ -36,7 +36,7 @@ local function BunkerBreach()
         -- [2. THE BUNKER SNAP]
         -- 4 studs back (Backside) AND 15 studs down (Underworld)
         -- This is a "Dead Zone" where nothing can kill you.
-        local bunkerCF = main.CFrame * CFrame.new(0, -15, 4) 
+        local bunkerCF = main.CFrame * CFrame.new(0, 15, 4) 
 
         -- Instant Snap
         root.CFrame = bunkerCF
