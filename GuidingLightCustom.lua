@@ -1,5 +1,6 @@
--- GUIDING LIGHT ENGINE (ULTRA-RAW + ANIMATED EDITION)
--- Texto agora flutua suavemente como no jogo original.
+-- GUIDING LIGHT ENGINE (ULTRA-RAW + FIXED ANIMATION)
+-- NENHUM TEXTO É ADICIONADO AUTOMATICAMENTE.
+-- AS ANIMAÇÕES ESTÃO CORRIGIDAS PARA EVITAR ERROS NO CONSOLE.
 
 local G = getgenv()
 
@@ -12,7 +13,7 @@ G.LoadGithubAudio = function(url)
         Headers = {["Accept"] = "audio/mpeg, audio/ogg, application/octet-stream"}
     })
     if response.StatusCode ~= 200 then return nil end
-    local fileName = "guiding_music_" .. tick() .. ".mp3"
+    local fileName = "guiding_music_fixed.mp3"
     writefile(fileName, response.Body)
     local success, assetId = pcall(function() return getcustomasset(fileName) end)
     return success and assetId or nil
@@ -37,8 +38,7 @@ _G.ShowCustomDeathHint = function(data)
 
     local textLabel = Instance.new("TextLabel", bg)
     textLabel.Size = UDim2.new(0.8, 0, 0.2, 0)
-    -- Posição inicial levemente mais baixa para o efeito de subida
-    textLabel.Position = UDim2.new(0.1, 0, 0.45, 0) 
+    textLabel.Position = UDim2.new(0.1, 0, 0.45, 0)
     textLabel.BackgroundTransparency = 1
     textLabel.Font = Enum.Font.SpecialElite
     textLabel.TextColor3 = color
@@ -52,38 +52,34 @@ _G.ShowCustomDeathHint = function(data)
 
     task.spawn(function()
         local TS = game:GetService("TweenService")
-        
-        -- Fade do Fundo
         TS:Create(bg, TweenInfo.new(1.2), {BackgroundTransparency = 0.15}):Play()
         task.wait(1.2)
 
+        -- LOOP DE TEXTOS PUROS (SEM PREFIXO "YOU DIED TO")
         for _, content in ipairs(tips) do
             textLabel.Text = tostring(content)
-            
-            -- RESET DE POSIÇÃO (Começa um pouco abaixo)
             textLabel.Position = UDim2.new(0.1, 0, 0.45, 0)
             textLabel.TextTransparency = 1
 
--- ANIMAÇÃO CORRIGIDA: SOBE E APARECE
-local introTween = TS:Create(textLabel, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-    Position = UDim2.new(0.1, 0, 0.4, 0),
-    TextTransparency = 0
-})
-introTween:Play()
-
-task.wait(2.5 + (#textLabel.Text * 0.04)) 
-
--- ANIMAÇÃO CORRIGIDA: SOBE MAIS UM POUCO E SOME
-local outroTween = TS:Create(textLabel, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-    Position = UDim2.new(0.1, 0, 0.35, 0),
-    TextTransparency = 1
-})
-outroTween:Play()
+            -- CORREÇÃO DO ENUM: EasingStyle.Quad + EasingDirection.Out
+            local introTween = TS:Create(textLabel, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Position = UDim2.new(0.1, 0, 0.4, 0),
+                TextTransparency = 0
+            })
+            introTween:Play()
+            
+            task.wait(2.5 + (#textLabel.Text * 0.04)) 
+            
+            -- CORREÇÃO DO ENUM: EasingStyle.Quad + EasingDirection.In
+            local outroTween = TS:Create(textLabel, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Position = UDim2.new(0.1, 0, 0.35, 0),
+                TextTransparency = 1
+            })
+            outroTween:Play()
             
             task.wait(1.5)
         end
 
-        -- Finalização
         TS:Create(bg, TweenInfo.new(1.5), {BackgroundTransparency = 1}):Play()
         task.wait(1.5)
         music:Destroy()
