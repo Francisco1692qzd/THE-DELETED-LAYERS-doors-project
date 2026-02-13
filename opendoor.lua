@@ -1,20 +1,19 @@
--- [[ OpenDoor.lua - Zero-Frame Instant Breach ]]
+-- [[ OpenDoor.lua - Backside Shield Breach ]]
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 
-local function InstantBreach()
+local function SafeInstantBreach()
     local char = Player.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if not root then return end
 
-    -- [1. THE HIDING WATCHER]
-    -- Wait silently if they are hiding
+    -- [1. WAIT FOR EXIT]
     if char:GetAttribute("Hiding") == true then
         repeat task.wait() until char:GetAttribute("Hiding") ~= true
     end
 
-    -- [2. GET DOOR DATA]
     local roomNum = RS.GameData.LatestRoom.Value
     local room = workspace.CurrentRooms:FindFirstChild(tostring(roomNum))
     if not room or not room:FindFirstChild("Door") then return end
@@ -23,16 +22,18 @@ local function InstantBreach()
     local main = door:FindFirstChild("Door") or door:FindFirstChild("Panel")
 
     if main and main.CanCollide == true then
-        -- [3. CAPTURE EXACT PREVIOUS POSITION]
+        -- [2. CAPTURE EXACT POSITION]
         local lastPos = root.CFrame
         
-        -- [4. THE INSTANT BRUTE-FORCE]
-        -- We run this in a fast loop without 'wait' to force it in a single engine step
+        -- [3. THE SAFE SNAP]
+        -- Instead of being IN the door, we stay 4 studs back (the safe side)
+        -- This keeps the door between us and the Entity.
+        local safeCFrame = main.CFrame * CFrame.new(0, 0, 4) 
+
         for i = 1, 5 do 
-            -- Snap to door (5 studs up is safer than 25)
-            root.CFrame = main.CFrame * CFrame.new(0, 5, 0)
+            root.CFrame = safeCFrame
             
-            -- Fire every trigger possible
+            -- Trigger interaction
             local remote = door:FindFirstChild("ClientOpen")
             if remote then remote:FireServer() end
 
@@ -45,21 +46,16 @@ local function InstantBreach()
                 end
             end
             
-            -- If the door opened, stop immediately to go back
             if main.CanCollide == false then break end
-            
-            -- No task.wait() here makes it happen in the same physics frame
-            runService.Heartbeat:Wait() 
+            RunService.Heartbeat:Wait() 
         end
 
-        -- [5. THE FORCED RETURN]
-        -- We put you back to exactly where you were before the snap
+        -- [4. THE INSTANT RETURN]
         root.CFrame = lastPos
         root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
     end
 end
 
--- Execute
 task.spawn(function()
-    pcall(InstantBreach)
+    pcall(SafeInstantBreach)
 end)
