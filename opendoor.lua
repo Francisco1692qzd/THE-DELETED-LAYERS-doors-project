@@ -1,11 +1,11 @@
--- [[ OpenDoor.lua - Raycast-Proof Underworld Edition ]]
--- Snap 15 studs below the floor to block Line-of-Sight kills.
+-- [[ OpenDoor.lua - True Ghost Edition ]]
+-- Keeps Hiding attribute TRUE so Raycasts/Entities ignore you entirely.
 
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local Player = Players.LocalPlayer
 
-local function RaycastProofBreach()
+local function TrueGhostBreach()
     local Character = Player.Character
     local Root = Character and Character:FindFirstChild("HumanoidRootPart")
     if not Root then return end
@@ -18,42 +18,40 @@ local function RaycastProofBreach()
         local mainPart = doorModel:FindFirstChild("Door") or doorModel:FindFirstChild("Panel")
 
         if mainPart and mainPart.CanCollide == true then
+            -- 1. SAVE POSITION ONLY
             local originalPos = Root.CFrame
-            local wasHiding = Character:GetAttribute("Hiding")
+            
+            -- WE DO NOT TOUCH THE HIDING ATTRIBUTE. 
+            -- If you are hiding, you stay hiding. 
+            -- If you are walking, you stay walking.
 
-            -- 1. PREPARE THE GHOST
-            if wasHiding then Character:SetAttribute("Hiding", false) end
-
-            -- 2. UNDERWORLD SNAP (Blocking Raycasts)
-            -- We teleport 15 studs BELOW the door. 
-            -- Most raycasts start at the entity's height and won't go through the floor.
+            -- 2. THE UNDERWORLD SNAP
+            -- Snapping below the floor is an extra layer of "Raycast" protection
             Root.CFrame = mainPart.CFrame * CFrame.new(0, -15, 0)
             
-            -- We give it a tiny moment to register position
-            task.wait(0.02) 
+            task.wait(0.02) -- Minimal sync
 
-            -- 3. THE TRIGGER (Remote + Search)
+            -- 3. FORCE INTERACTION
+            -- FireServer and firetouchinterest do NOT check if you are hiding.
             local remote = doorModel:FindFirstChild("ClientOpen")
             if remote then remote:FireServer() end
 
             for _, v in pairs(doorModel:GetDescendants()) do
                 if v:IsA("ProximityPrompt") then
-                    -- ProximityPrompts work through walls/floors if triggered via script
+                    -- Script-side triggering usually bypasses the "Hiding" check
                     fireproximityprompt(v)
                 elseif v:IsA("TouchTransmitter") then
-                    -- firetouchinterest doesn't care about distance or raycasts!
                     firetouchinterest(Root, v.Parent, 0)
                     firetouchinterest(Root, v.Parent, 1)
                 end
             end
 
-            -- 4. THE INSTANT RETURN
+            -- 4. THE RETURN
             Root.CFrame = originalPos
-            if wasHiding then Character:SetAttribute("Hiding", true) end
-            
             Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
         end
     end
 end
 
-pcall(RaycastProofBreach)
+-- If this is called while hiding, you stay safe!
+pcall(TrueGhostBreach)
