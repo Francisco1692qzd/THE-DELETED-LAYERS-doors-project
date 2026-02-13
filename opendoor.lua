@@ -28,7 +28,7 @@ local function SeamlessBreach()
             
             -- [3. THE SEAMLESS SNAP]
             -- Snap to door underground to remain unnoticed
-            root.CFrame = main.CFrame * CFrame.new(0, -15, 0)
+            root.CFrame = main.CFrame * CFrame.new(0, 25, 0)
             
             -- Single frame trigger
             local remote = door:FindFirstChild("ClientOpen")
