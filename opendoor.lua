@@ -27,7 +27,7 @@ local function GuaranteedInvisibleBreach()
         -- [2. THE STICKY SNAP]
         -- We snap for exactly 2 physics frames. 
         -- This is fast enough to be invisible but long enough for the server to "catch up".
-        local targetCF = main.CFrame * CFrame.new(0, 0, 4)
+        local targetCF = main.CFrame * CFrame.new(0, 0, -4)
 
         -- Fire triggers immediately
         local remote = door:FindFirstChild("ClientOpen")
