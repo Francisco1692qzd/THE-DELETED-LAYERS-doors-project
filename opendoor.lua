@@ -1,45 +1,72 @@
--- [[ OpenDoor.lua - The Winning Formula ]]
+-- [[ OpenDoor.lua - The Universal Ghost Breach ]]
+-- Optimized for: The Deleted Layers Project
+
+local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
-local Player = game:GetService("Players").LocalPlayer
+local Player = Players.LocalPlayer
+
+-- [1. DESIGNATED BREACHER CHECK]
+-- Prevents everyone from teleporting at the exact same time (Anti-Cheat Safety)
+local function IsDesignatedBreacher()
+    local allPlayers = Players:GetPlayers()
+    table.sort(allPlayers, function(a, b) return a.UserId < b.UserId end)
+    return allPlayers[1] == Player
+end
 
 local function Breach()
-    local char = Player.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
+    -- Only the "Leader" (lowest UserId) performs the physical teleport/trigger
+    if not IsDesignatedBreacher() then 
+        return 
+    end
 
-    local roomNum = RS.GameData.LatestRoom.Value
-    local room = workspace.CurrentRooms:FindFirstChild(tostring(roomNum))
+    local Character = Player.Character
+    local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+    if not Root then return end
 
-    if room and room:FindFirstChild("Door") then
-        local door = room.Door
-        local main = door:FindFirstChild("Door") or door:FindFirstChild("Panel") or door:FindFirstChildOfClass("BasePart")
+    local latestRoomNum = RS.GameData.LatestRoom.Value
+    local roomFolder = workspace.CurrentRooms:FindFirstChild(tostring(latestRoomNum))
+
+    if roomFolder and roomFolder:FindFirstChild("Door") then
+        local doorModel = roomFolder.Door
         
-        if main then
-            local oldPos = root.CFrame
-            
-            -- 1. Snap to door to bypass distance checks
-            root.CFrame = main.CFrame
-            task.wait() 
+        -- Find the best part to teleport to (The actual door or the frame)
+        local mainPart = doorModel:FindFirstChild("Door") 
+            or doorModel:FindFirstChild("Panel") 
+            or doorModel:FindFirstChildOfClass("BasePart")
 
-            -- 2. Fire everything at once
-            local remote = door:FindFirstChild("ClientOpen")
+        if mainPart then
+            -- Check if door is already open to save resources
+            if mainPart.CanCollide == false then return end
+
+            local originalPos = Root.CFrame
+
+            -- 2. THE GHOST MANEUVER
+            Root.CFrame = mainPart.CFrame
+            task.wait() -- Minimal delay for server distance check
+
+            -- 3. THE TRIPLE-THREAT TRIGGER (Remote, Prompt, and Touch)
+            
+            -- Method A: Remote Event
+            local remote = doorModel:FindFirstChild("ClientOpen")
             if remote then remote:FireServer() end
 
-            for _, v in pairs(door:GetDescendants()) do
+            -- Method B & C: Prompts and TouchInterests
+            for _, v in pairs(doorModel:GetDescendants()) do
                 if v:IsA("ProximityPrompt") then
                     fireproximityprompt(v)
                 elseif v:IsA("TouchTransmitter") then
-                    firetouchinterest(root, v.Parent, 0)
-                    firetouchinterest(root, v.Parent, 1)
+                    firetouchinterest(Root, v.Parent, 0) -- Touch
+                    firetouchinterest(Root, v.Parent, 1) -- Untouch
                 end
             end
 
-            -- 3. Snap back instantly
-            task.wait()
-            root.CFrame = oldPos
-            root.AssemblyLinearVelocity = Vector3.new(0,0,0)
+            -- 4. THE INSTANT RETURN
+            task.wait() -- Smallest possible wait for engine registration
+            Root.CFrame = originalPos
+            Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0) -- Kill momentum
         end
     end
 end
 
+-- Execute safely
 pcall(Breach)
