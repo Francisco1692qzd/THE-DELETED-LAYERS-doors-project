@@ -18,7 +18,7 @@ _G.ShowCustomDeathHint = function(data)
     sg.IgnoreGuiInset = true
     sg.DisplayOrder = 10000
 
-    local audioId = G.LoadGithubAudio("https://raw.githubusercontent.com/Francisco1692qzd/THE-DELETED-LAYERS-doors-project/main//Iron%20Veins%20-%20Phobia%20Echoes%20-%20Sonauto.mp3")
+    local audioId = G.LoadGithubAudio("https://raw.githubusercontent.com/Francisco1692qzd/THE-DELETED-LAYERS-doors-project/main/Iron%20Veins%20-%20Phobia%20Echoes%20-%20Sonauto.mp3")
 
     local bg = Instance.new("Frame", sg)
     bg.Size = UDim2.new(1, 0, 1, 0)
