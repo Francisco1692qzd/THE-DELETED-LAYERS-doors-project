@@ -82,6 +82,8 @@ _G.ShowCustomDeathHint = function(data)
 
         TS:Create(bg, TweenInfo.new(1.5), {BackgroundTransparency = 1}):Play()
         task.wait(1.5)
+        TS:Create(music, TweenInfo.new(1), {PlaybackSpeed = 0}):Play()
+        wait(1)
         music:Destroy()
         sg:Destroy()
     end)
