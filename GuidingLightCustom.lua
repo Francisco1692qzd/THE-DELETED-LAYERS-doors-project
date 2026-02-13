@@ -64,22 +64,21 @@ _G.ShowCustomDeathHint = function(data)
             textLabel.Position = UDim2.new(0.1, 0, 0.45, 0)
             textLabel.TextTransparency = 1
 
-            -- ANIMAÇÃO: SOBE E APARECE (Fade In + Move Up)
-            local introTween = TS:Create(textLabel, TweenInfo.new(1.5, Enum.EasingStyle.QuadOut), {
-                Position = UDim2.new(0.1, 0, 0.4, 0),
-                TextTransparency = 0
-            })
-            introTween:Play()
-            
-            -- Tempo de espera dinâmico enquanto o texto flutua levemente
-            task.wait(2.5 + (#textLabel.Text * 0.04)) 
-            
-            -- ANIMAÇÃO: SOBE MAIS UM POUCO E SOME (Fade Out + Move Up)
-            local outroTween = TS:Create(textLabel, TweenInfo.new(1.5, Enum.EasingStyle.QuadIn), {
-                Position = UDim2.new(0.1, 0, 0.35, 0),
-                TextTransparency = 1
-            })
-            outroTween:Play()
+-- ANIMAÇÃO CORRIGIDA: SOBE E APARECE
+local introTween = TS:Create(textLabel, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+    Position = UDim2.new(0.1, 0, 0.4, 0),
+    TextTransparency = 0
+})
+introTween:Play()
+
+task.wait(2.5 + (#textLabel.Text * 0.04)) 
+
+-- ANIMAÇÃO CORRIGIDA: SOBE MAIS UM POUCO E SOME
+local outroTween = TS:Create(textLabel, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+    Position = UDim2.new(0.1, 0, 0.35, 0),
+    TextTransparency = 1
+})
+outroTween:Play()
             
             task.wait(1.5)
         end
