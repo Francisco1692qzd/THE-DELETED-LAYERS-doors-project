@@ -2,11 +2,40 @@ local G = getgenv()
 
 G.LoadGithubAudio = function(url)
     if not (writefile and getcustomasset and request) then return nil end
-    local response = request({Url = url .. "?t=" .. tick(), Method = "GET"})
-    if response.StatusCode ~= 200 then return nil end
-    local fileName = "death_music.mp3"
+
+    -- Bypass de Cache: Adiciona um número aleatório ao final para forçar o download limpo
+    local cleanUrl = url .. "?t=" .. math.random(1, 100000)
+
+    local response = request({
+        Url = cleanUrl,
+        Method = "GET",
+        Headers = {
+            ["Accept"] = "audio/mpeg, audio/ogg, application/octet-stream"
+        }
+    })
+
+    if response.StatusCode ~= 200 then
+        warn("Xeno: Falha no download. Status: " .. response.StatusCode)
+        return nil
+    end
+
+    -- Nome único para evitar conflitos de escrita
+    local fileName = "rebound_fix_" .. tick() .. ".mp3"
+    
+    -- Salva e força a leitura
     writefile(fileName, response.Body)
-    return getcustomasset(fileName)
+    
+    local success, assetId = pcall(function()
+        return getcustomasset(fileName)
+    end)
+
+    if success then
+        print("✅ Áudio Rebound carregado com sucesso!")
+        return assetId
+    end
+    
+    warn("Erro no getcustomasset: " .. tostring(assetId))
+    return nil
 end
 
 _G.ShowCustomDeathHint = function(data)
