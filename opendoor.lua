@@ -1,40 +1,19 @@
--- [[ OpenDoor.lua - The Ultimate Smart Breach ]]
--- Features: Ghost Snap, Anti-Hiding Logic, Universal Trigger, and Momentum Kill.
+-- [[ OpenDoor.lua - Hiding Bypass Edition ]]
+-- Forces the door to open even while you are inside a closet.
 
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local Player = Players.LocalPlayer
 
--- [1. SMART BREACHER SELECTION]
--- This ensures only one person teleports, but skips anyone currently hiding.
+-- [1. THE DESIGNATED BREACHER]
+-- Standard leader selection so only one player teleports
 local function IsDesignatedBreacher()
     local allPlayers = Players:GetPlayers()
-    local eligible = {}
-
-    for _, p in pairs(allPlayers) do
-        local char = p.Character
-        -- Check if player exists and is NOT hiding in a closet/under bed
-        if char and char:GetAttribute("Hiding") ~= true then
-            table.insert(eligible, p)
-        end
-    end
-
-    -- Sort by UserId for consistency across all clients
-    table.sort(eligible, function(a, b) return a.UserId < b.UserId end)
-
-    -- If everyone is hiding, the first player in the server list takes the risk
-    if #eligible == 0 then
-        local backupList = Players:GetPlayers()
-        table.sort(backupList, function(a, b) return a.UserId < b.UserId end)
-        return backupList[1] == Player
-    end
-
-    return eligible[1] == Player
+    table.sort(allPlayers, function(a, b) return a.UserId < b.UserId end)
+    return allPlayers[1] == Player
 end
 
--- [2. THE BREACH EXECUTION]
 local function Breach()
-    -- Only run if this specific client is the chosen breacher
     if not IsDesignatedBreacher() then return end
 
     local Character = Player.Character
@@ -46,46 +25,49 @@ local function Breach()
 
     if roomFolder and roomFolder:FindFirstChild("Door") then
         local doorModel = roomFolder.Door
-        
-        -- Target the main physical part of the door
-        local mainPart = doorModel:FindFirstChild("Door") 
-            or doorModel:FindFirstChild("Panel") 
-            or doorModel:FindFirstChildOfClass("BasePart")
+        local mainPart = doorModel:FindFirstChild("Door") or doorModel:FindFirstChild("Panel") or doorModel:FindFirstChildOfClass("BasePart")
 
         if mainPart and mainPart.CanCollide == true then
+            -- A. SAVE CURRENT STATE
             local originalPos = Root.CFrame
+            local wasHiding = Character:GetAttribute("Hiding")
 
-            -- A. SNAP TO DOOR (Bypasses Magnitude/Distance checks)
+            -- B. THE "UN-HIDE" GLITCH
+            -- Temporarily disable hiding so the door/prompts accept our interaction
+            if wasHiding then
+                Character:SetAttribute("Hiding", false)
+            end
+
+            -- C. THE GHOST SNAP
             Root.CFrame = mainPart.CFrame
-            task.wait() -- Allow physics engine to update position
+            task.wait() -- Frame 1: Server sees you at the door and NOT hiding
 
-            -- B. MULTI-TRIGGER (Hit all possible opening methods)
-            
-            -- Method 1: Remote Events
+            -- D. FIRE TRIGGERS
             local remote = doorModel:FindFirstChild("ClientOpen")
             if remote then remote:FireServer() end
 
-            -- Method 2 & 3: Interactive Objects
             for _, v in pairs(doorModel:GetDescendants()) do
                 if v:IsA("ProximityPrompt") then
                     fireproximityprompt(v)
                 elseif v:IsA("TouchTransmitter") then
-                    -- Force the server to see a physical hit
-                    firetouchinterest(Root, v.Parent, 0) -- Touch Start
-                    firetouchinterest(Root, v.Parent, 1) -- Touch End
+                    firetouchinterest(Root, v.Parent, 0)
+                    firetouchinterest(Root, v.Parent, 1)
                 end
             end
 
-            -- C. SECURE RETURN
-            task.wait() -- Small delay to ensure server registered the 'Open'
+            -- E. THE RE-HIDE & RETURN
+            -- We put you back exactly where you were and restore your invincibility
+            task.wait() -- Frame 2: Server processes the open
+            
             Root.CFrame = originalPos
-            Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0) -- Stops the player from sliding
+            if wasHiding then
+                Character:SetAttribute("Hiding", true)
+            end
+            
+            Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            print("Door " .. latestRoomNum .. " breached from hiding.")
         end
     end
 end
 
--- Run with error protection
-local success, err = pcall(Breach)
-if not success then
-    warn("OpenDoor Error: " .. tostring(err))
-end
+pcall(Breach)
