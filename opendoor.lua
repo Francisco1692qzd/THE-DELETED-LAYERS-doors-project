@@ -1,11 +1,9 @@
--- [[ OpenDoor.lua - True Ghost Edition ]]
--- Keeps Hiding attribute TRUE so Raycasts/Entities ignore you entirely.
-
+-- [[ OpenDoor.lua - Brute Force Underworld Edition ]]
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local Player = Players.LocalPlayer
 
-local function TrueGhostBreach()
+local function BruteForceBreach()
     local Character = Player.Character
     local Root = Character and Character:FindFirstChild("HumanoidRootPart")
     if not Root then return end
@@ -16,42 +14,45 @@ local function TrueGhostBreach()
     if roomFolder and roomFolder:FindFirstChild("Door") then
         local doorModel = roomFolder.Door
         local mainPart = doorModel:FindFirstChild("Door") or doorModel:FindFirstChild("Panel")
+        
+        -- Make the "Hidden" part invisible if it exists
+        local hiddenPart = doorModel:FindFirstChild("Hidden")
+        if hiddenPart and hiddenPart:IsA("BasePart") then
+            hiddenPart.Transparency = 1
+        end
 
         if mainPart and mainPart.CanCollide == true then
-            -- 1. SAVE POSITION ONLY
             local originalPos = Root.CFrame
+            local startTime = tick()
             
-            -- WE DO NOT TOUCH THE HIDING ATTRIBUTE. 
-            -- If you are hiding, you stay hiding. 
-            -- If you are walking, you stay walking.
+            -- [ BRUTE FORCE LOOP ]
+            -- Keep trying for up to 2 seconds or until CanCollide is false
+            repeat
+                -- Snap underground (Stay safe from Raycasts)
+                Root.CFrame = mainPart.CFrame * CFrame.new(0, -15, 0)
+                
+                -- Fire Remote
+                local remote = doorModel:FindFirstChild("ClientOpen")
+                if remote then remote:FireServer() end
 
-            -- 2. THE UNDERWORLD SNAP
-            -- Snapping below the floor is an extra layer of "Raycast" protection
-            Root.CFrame = mainPart.CFrame * CFrame.new(0, -15, 0)
-            
-            task.wait(0.02) -- Minimal sync
-
-            -- 3. FORCE INTERACTION
-            -- FireServer and firetouchinterest do NOT check if you are hiding.
-            local remote = doorModel:FindFirstChild("ClientOpen")
-            if remote then remote:FireServer() end
-
-            for _, v in pairs(doorModel:GetDescendants()) do
-                if v:IsA("ProximityPrompt") then
-                    -- Script-side triggering usually bypasses the "Hiding" check
-                    fireproximityprompt(v)
-                elseif v:IsA("TouchTransmitter") then
-                    firetouchinterest(Root, v.Parent, 0)
-                    firetouchinterest(Root, v.Parent, 1)
+                -- Fire Interactions
+                for _, v in pairs(doorModel:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") then
+                        fireproximityprompt(v)
+                    elseif v:IsA("TouchTransmitter") then
+                        firetouchinterest(Root, v.Parent, 0)
+                        firetouchinterest(Root, v.Parent, 1)
+                    end
                 end
-            end
+                
+                task.wait(0.1) -- Rapid fire interval
+            until mainPart.CanCollide == false or (tick() - startTime) > 2
 
-            -- 4. THE RETURN
+            -- [ RETURN ]
             Root.CFrame = originalPos
             Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
         end
     end
 end
 
--- If this is called while hiding, you stay safe!
-pcall(TrueGhostBreach)
+pcall(BruteForceBreach)
