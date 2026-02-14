@@ -29,7 +29,7 @@ local function TrueBunkerBreach()
         -- [1. THE BUNKER SNAP]
         -- Note: Ensure it's -15 to go UNDER the floor. 
         -- Positive 15 would put you in the ceiling!
-        local bunkerCF = main.CFrame * CFrame.new(0, -15, 4) 
+        local bunkerCF = main.CFrame * CFrame.new(0, 15, 4) 
 
         -- [2. TEMPORARY UN-HIDE]
         -- We disable the attribute just for the interaction frames
