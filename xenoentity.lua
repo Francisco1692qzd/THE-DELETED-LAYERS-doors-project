@@ -97,7 +97,7 @@ local function SpawnXeno()
             if nearSound then nearSound.Volume = math.clamp(1 - (dist / 80), 0, 3.5) end
 
             -- GATILHO DE MORTE (ESTRUTURA SOLICITADA)
-            if canSeeTarget(char, 70) and not char:GetAttribute("Hiding") then
+            if canSeeTarget(char, 60 - 5.7) and not char:GetAttribute("Hiding") then
                 ExecuteJumpscare()
                 entityPart.Parent:FindFirstChild("Jumpscare"):Play()
             end
