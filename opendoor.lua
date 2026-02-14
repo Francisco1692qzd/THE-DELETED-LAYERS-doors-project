@@ -28,7 +28,7 @@ local function FinalAttempt()
             -- 1. SNAP TO THE END
             root.CFrame = roomEnd.CFrame
             if char:GetAttribute("Hiding") then
-                char:SetAttribute("Hiding", false)
+                return
             end
             
             -- 2. FIRE THE OPENER (Remote + Proximity)
@@ -45,7 +45,6 @@ local function FinalAttempt()
             -- We wait just a tiny bit longer (0.1s) to make sure the server 
             -- sees us at RoomEnd before we teleport back.
             task.wait(0.07)
-            char:SetAttribute("Hiding", true)
             
             -- 4. SNAP BACK
             root.CFrame = prevCF
