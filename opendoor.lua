@@ -1,85 +1,61 @@
--- [[ OpenDoor.lua - The Final "Deleted Layers" Edition ]]
--- Features: Underworld Snap, Hiding Bypass, Instant Return, & Multi-Entity Debounce.
-
+-- [[ OpenDoor.lua - The Final Stand ]]
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local Player = Players.LocalPlayer
+local LocalPlayer = Players.LocalPlayer
 
-local function FullBreach()
-    -- [1. DEBOUNCE & VALIDATION]
-    if _G.DoorBreaching then return end
-    _G.DoorBreaching = true
-
-    local char = Player.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    if not root then _G.DoorBreaching = false return end
-
-    -- [2. TARGETING CURRENT ROOM]
-    local roomNum = RS.GameData.LatestRoom.Value
-    local room = workspace.CurrentRooms:FindFirstChild(tostring(roomNum))
-    if not room or not room:FindFirstChild("Door") then 
-        _G.DoorBreaching = false 
-        return 
-    end
-
-    local door = room.Door
-    local main = door:FindFirstChild("Door") or door:FindFirstChild("Panel")
-
-    -- Check if the door is actually closed before proceeding
-    if main and main.CanCollide == true then
-        local oldPos = root.CFrame
-        local wasHiding = char:GetAttribute("Hiding")
-        
-        -- Bunker coordinates: 2 studs back from door, 15 studs UNDER the floor
-        local bunkerCF = main.CFrame * CFrame.new(0, -15, 2) 
-
-        -- [3. PREPARE THE GHOST]
-        if wasHiding then char:SetAttribute("Hiding", false) end
-        
-        root.Anchored = true -- Lock position to prevent closet-logic from pulling us back
-        root.CFrame = bunkerCF
-
-        -- [4. INTERACTION LOOP]
-        -- We pulse the interaction for 2-3 frames to sync with Server Latency
-        for i = 1, 3 do
-            -- Fire the Remote
-            local remote = door:FindFirstChild("ClientOpen")
-            if remote then remote:FireServer() end
-
-            -- Fire the Proximity and Touch Triggers
-            for _, v in pairs(door:GetDescendants()) do
-                if v:IsA("ProximityPrompt") then
-                    fireproximityprompt(v)
-                elseif v:IsA("TouchTransmitter") then
-                    firetouchinterest(root, v.Parent, 0)
-                    firetouchinterest(root, v.Parent, 1)
-                end
-            end
-            
-            if main.CanCollide == false then break end
-            RunService.Heartbeat:Wait() -- Sync with the server's physics step
-        end
-
-        -- [5. SECURE RETURN]
-        root.Anchored = false
-        root.CFrame = oldPos
-        
-        -- Restore hiding state if they were in a closet
-        if wasHiding then char:SetAttribute("Hiding", true) end
-        
-        -- Kill any momentum so the player doesn't slide upon return
-        root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-    end
-
-    _G.DoorBreaching = false
+local function GetOpener()
+    local p = Players:GetPlayers()
+    table.sort(p, function(a, b) return a.UserId < b.UserId end)
+    return p[1]
 end
 
--- Execute in a safe thread
-task.spawn(function()
-    local success, err = pcall(FullBreach)
-    if not success then
-        warn("Door Breach Failed: " .. tostring(err))
-        _G.DoorBreaching = false
+local function FinalAttempt()
+    -- Only the Lowest UserID runs this
+    if LocalPlayer ~= GetOpener() then return end
+    
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local latestRoom = RS.GameData.LatestRoom.Value
+    local room = workspace.CurrentRooms:FindFirstChild(tostring(latestRoom))
+
+    if room and root then
+        local roomEnd = room:FindFirstChild("RoomEnd")
+        local door = room:FindFirstChild("Door")
+        
+        if roomEnd and door then
+            local prevCF = root.CFrame
+            
+            -- 1. SNAP TO THE END
+            root.CFrame = roomEnd.CFrame
+            if char:GetAttribute("Hiding") then
+                char:SetAttribute("Hiding", false)
+            end
+            
+            -- 2. FIRE THE OPENER (Remote + Proximity)
+            if door:FindFirstChild("ClientOpen") then
+                door.ClientOpen:FireServer()
+            end
+            
+            -- Optional: Force-trigger any prompts at the door just in case
+            for _, v in pairs(door:GetDescendants()) do
+                if v:IsA("ProximityPrompt") then fireproximityprompt(v) end
+            end
+
+            -- 3. THE "SYNC" WAIT
+            -- We wait just a tiny bit longer (0.1s) to make sure the server 
+            -- sees us at RoomEnd before we teleport back.
+            task.wait(0.07)
+            char:SetAttribute("Hiding", true)
+            
+            -- 4. SNAP BACK
+            root.CFrame = prevCF
+            print("Door opened by Lowest ID: " .. LocalPlayer.Name)
+        end
     end
+end
+
+-- Wrap in a function so you can call it from your Entity Script
+task.spawn(function()
+    local success, err = pcall(FinalAttempt)
+    if not success then warn("Final Attempt Failed: " .. err) end
 end)
