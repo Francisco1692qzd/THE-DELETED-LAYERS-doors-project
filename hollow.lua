@@ -49,7 +49,7 @@ local CameraShaker = require(ReplicatedStorage:WaitForChild("CameraShaker"))
 -- ==========================================
 local currentRoom = workspace.CurrentRooms:FindFirstChild(tostring(initialRoomValue))
 
-if currentRoom and currentRoom:FindFirstChild("RoomEnd") then
+if currentRoom and currentRoom:FindFirstChild("RoomEnd") and currentRoom:GetAttribute("IsDark") then
     local entityModel = GithubModelLoader(RAW_MODEL_URL)
     
     if entityModel then
