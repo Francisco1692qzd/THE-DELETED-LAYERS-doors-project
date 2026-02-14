@@ -1,10 +1,10 @@
--- [[ OpenDoor.lua - The Anchor-Lock Bunker ]]
+-- [[ OpenDoor.lua - Sticky Bunker Edition ]]
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 
-local function AnchorBunkerBreach()
+local function StickyBunkerBreach()
     if _G.DoorBreaching then return end
     _G.DoorBreaching = true
 
@@ -26,34 +26,39 @@ local function AnchorBunkerBreach()
         local oldPos = root.CFrame
         local wasHiding = char:GetAttribute("Hiding")
         
-        -- Bunker coordinates: 4 studs back, 15 studs DOWN
-        local bunkerCF = main.CFrame * CFrame.new(0, 15, 4) 
+        -- Move the bunker closer: 2 studs back instead of 4, 15 studs down.
+        local bunkerCF = main.CFrame * CFrame.new(0, -15, 2) 
 
-        -- [1. THE FORCE SNAP]
+        -- [1. THE STICKY SNAP]
         if wasHiding then char:SetAttribute("Hiding", false) end
         
-        -- Anchor prevents the closet script from yanking you back immediately
-        root.Anchored = true 
+        root.Anchored = true
         root.CFrame = bunkerCF
-        
-        -- [2. THE INTERACTION]
-        local remote = door:FindFirstChild("ClientOpen")
-        if remote then remote:FireServer() end
 
-        -- Give the server 2 frames to acknowledge you are "at the door"
-        RunService.Heartbeat:Wait()
-        RunService.Heartbeat:Wait()
+        -- [2. BRUTE FORCE LOOP]
+        -- We stay here and spam until the door opens (CanCollide false)
+        local timeout = 0
+        while main.CanCollide == true and timeout < 15 do 
+            timeout = timeout + 1
+            
+            -- Fire every interaction type
+            local remote = door:FindFirstChild("ClientOpen")
+            if remote then remote:FireServer() end
 
-        for _, v in pairs(door:GetDescendants()) do
-            if v:IsA("ProximityPrompt") then
-                fireproximityprompt(v)
-            elseif v:IsA("TouchTransmitter") then
-                firetouchinterest(root, v.Parent, 0)
-                firetouchinterest(root, v.Parent, 1)
+            for _, v in pairs(door:GetDescendants()) do
+                if v:IsA("ProximityPrompt") then
+                    fireproximityprompt(v)
+                elseif v:IsA("TouchTransmitter") then
+                    firetouchinterest(root, v.Parent, 0)
+                    firetouchinterest(root, v.Parent, 1)
+                end
             end
+            
+            -- Wait exactly one physics frame before retrying
+            RunService.Heartbeat:Wait()
         end
 
-        -- [3. THE RELEASE & RETURN]
+        -- [3. RETURN]
         root.Anchored = false
         root.CFrame = oldPos
         
@@ -65,5 +70,5 @@ local function AnchorBunkerBreach()
 end
 
 task.spawn(function()
-    pcall(AnchorBunkerBreach)
+    pcall(StickyBunkerBreach)
 end)
