@@ -1,10 +1,10 @@
--- [[ OpenDoor.lua - The True Bunker Breach ]]
+-- [[ OpenDoor.lua - The Anchor-Lock Bunker ]]
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 
-local function TrueBunkerBreach()
+local function AnchorBunkerBreach()
     if _G.DoorBreaching then return end
     _G.DoorBreaching = true
 
@@ -26,21 +26,21 @@ local function TrueBunkerBreach()
         local oldPos = root.CFrame
         local wasHiding = char:GetAttribute("Hiding")
         
-        -- [1. THE BUNKER SNAP]
-        -- Note: Ensure it's -15 to go UNDER the floor. 
-        -- Positive 15 would put you in the ceiling!
+        -- Bunker coordinates: 4 studs back, 15 studs DOWN
         local bunkerCF = main.CFrame * CFrame.new(0, 15, 4) 
 
-        -- [2. TEMPORARY UN-HIDE]
-        -- We disable the attribute just for the interaction frames
+        -- [1. THE FORCE SNAP]
         if wasHiding then char:SetAttribute("Hiding", false) end
-
+        
+        -- Anchor prevents the closet script from yanking you back immediately
+        root.Anchored = true 
         root.CFrame = bunkerCF
         
+        -- [2. THE INTERACTION]
         local remote = door:FindFirstChild("ClientOpen")
         if remote then remote:FireServer() end
 
-        -- Wait 2 frames for server to register "Not Hiding" + "Position"
+        -- Give the server 2 frames to acknowledge you are "at the door"
         RunService.Heartbeat:Wait()
         RunService.Heartbeat:Wait()
 
@@ -53,12 +53,11 @@ local function TrueBunkerBreach()
             end
         end
 
-        -- [3. THE SECURE RETURN]
+        -- [3. THE RELEASE & RETURN]
+        root.Anchored = false
         root.CFrame = oldPos
         
-        -- Restore hiding state immediately upon return
         if wasHiding then char:SetAttribute("Hiding", true) end
-        
         root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
     end
 
@@ -66,5 +65,5 @@ local function TrueBunkerBreach()
 end
 
 task.spawn(function()
-    pcall(TrueBunkerBreach)
+    pcall(AnchorBunkerBreach)
 end)
