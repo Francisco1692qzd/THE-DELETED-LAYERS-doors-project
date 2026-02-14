@@ -1,10 +1,10 @@
--- [[ OpenDoor.lua - Hide-Friendly Bunker ]]
+-- [[ OpenDoor.lua - The True Bunker Breach ]]
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 
-local function UniversalBunkerBreach()
+local function TrueBunkerBreach()
     if _G.DoorBreaching then return end
     _G.DoorBreaching = true
 
@@ -12,7 +12,6 @@ local function UniversalBunkerBreach()
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if not root then _G.DoorBreaching = false return end
 
-    -- [1. TARGETING]
     local roomNum = RS.GameData.LatestRoom.Value
     local room = workspace.CurrentRooms:FindFirstChild(tostring(roomNum))
     if not room or not room:FindFirstChild("Door") then 
@@ -24,26 +23,27 @@ local function UniversalBunkerBreach()
     local main = door:FindFirstChild("Door") or door:FindFirstChild("Panel")
 
     if main and main.CanCollide == true then
-        -- [2. STATE PRESERVATION]
         local oldPos = root.CFrame
-        -- We keep the "Hiding" attribute exactly as it is. 
-        -- No waiting, no toggling.
+        local wasHiding = char:GetAttribute("Hiding")
+        
+        -- [1. THE BUNKER SNAP]
+        -- Note: Ensure it's -15 to go UNDER the floor. 
+        -- Positive 15 would put you in the ceiling!
+        local bunkerCF = main.CFrame * CFrame.new(0, -15, 4) 
 
-        -- [3. THE UNDERWORLD BUNKER]
-        -- -15 is DOWN (Under floor), 4 is BACK (Behind door)
-        local bunkerCF = main.CFrame * CFrame.new(0, 15, 0) 
+        -- [2. TEMPORARY UN-HIDE]
+        -- We disable the attribute just for the interaction frames
+        if wasHiding then char:SetAttribute("Hiding", false) end
 
         root.CFrame = bunkerCF
         
-        -- Fire Remote
         local remote = door:FindFirstChild("ClientOpen")
         if remote then remote:FireServer() end
 
-        -- 2-frame stay for server registration (Invisible to eyes)
+        -- Wait 2 frames for server to register "Not Hiding" + "Position"
         RunService.Heartbeat:Wait()
         RunService.Heartbeat:Wait()
 
-        -- Trigger all events
         for _, v in pairs(door:GetDescendants()) do
             if v:IsA("ProximityPrompt") then
                 fireproximityprompt(v)
@@ -53,15 +53,18 @@ local function UniversalBunkerBreach()
             end
         end
 
-        -- [4. THE SECURE RETURN]
+        -- [3. THE SECURE RETURN]
         root.CFrame = oldPos
+        
+        -- Restore hiding state immediately upon return
+        if wasHiding then char:SetAttribute("Hiding", true) end
+        
         root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
     end
 
     _G.DoorBreaching = false
 end
 
--- This will now trigger regardless of whether the player is hiding or walking
 task.spawn(function()
-    pcall(UniversalBunkerBreach)
+    pcall(TrueBunkerBreach)
 end)
